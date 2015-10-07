@@ -156,7 +156,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     u = new LatLng(Double.parseDouble(JSC.getJString(joLoc, "latitude")),
                             Double.parseDouble(JSC.getJString(joLoc, "longitude")));
                     if (joUser != null) {
-                        title = JSC.getJString(joUser, "full_name");
+                        title = JSC.getJString(joUser, "full_name") + " (" + JSC.getJString(joUser, "username") + ")";
                     } else {
                         title = "UNKNOWN";
                         Log.e("JO", jo.toString() + ":");
@@ -205,6 +205,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         });
     }
+
     private Bitmap addWhiteBorder(Bitmap bmp) {
         int borderSize = 5;
         Bitmap bmpWithBorder = Bitmap.createBitmap(bmp.getWidth() + borderSize * 2, bmp.getHeight() + borderSize * 2, bmp.getConfig());
