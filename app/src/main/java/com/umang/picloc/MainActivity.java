@@ -3,11 +3,10 @@ package com.umang.picloc;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.Color;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -33,7 +32,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.util.ArrayList;
+import java.util.HashMap;
 
 import cz.msebera.android.httpclient.Header;
 
@@ -51,6 +50,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private InstagramUser instagramUser;
 
     MarkerOptions tempMarker;
+    JSONArray jaAll;
+    private HashMap<Marker, JSONObject> hashMap = new HashMap<>();
 
 
     @Override
@@ -71,6 +72,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     public void initialize() {
         pbLoading = (ProgressBar) findViewById(R.id.showLoading);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar.setTitle(getString(R.string.app_name));
         map = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map)).getMap();
         map.setMyLocationEnabled(true);
         map.setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
@@ -95,13 +98,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         @Override
                         public void onSuccess(int statusCode, Header[] headers, byte[] response) {
                             // called when response HTTP status is "200 OK"
-                            pbLoading.setVisibility(View.GONE);
                             LatLng u;
                             JSONObject jo = JSC.strToJOb(new String(response));
-                            JSONArray ja = JSC.strToJAr(JSC.getJString(jo, "data"));
-                            for (int i = 0; i < ja.length(); i++) {
-                                jo = JSC.strToJOb(JSC.jArrToString(ja, i));
-                                getLocationImage(jo);
+                            jaAll = JSC.strToJAr(JSC.getJString(jo, "data"));
+
+                            for (int i = 0; i < jaAll.length(); i++) {
+                                jo = JSC.strToJOb(JSC.jArrToString(jaAll, i));
+                                getLocationImage(jo, i);
                                 u = new LatLng(Double.parseDouble(JSC.getJString(jo, "latitude")),
                                         Double.parseDouble(JSC.getJString(jo, "longitude")));
                                 if (i == 0) {
@@ -127,7 +130,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         });
     }
 
-    private void getLocationImage(JSONObject jo) {
+    private void getLocationImage(JSONObject jo, final int position) {
         AsyncHttpClient client = new AsyncHttpClient();
         client.get("https://api.instagram.com/v1/locations/" + JSC.getJString(jo, "id") +
                 "/media/recent?access_token=" + instagramUser.accessToken, new AsyncHttpResponseHandler() {
@@ -149,7 +152,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     jo = JSC.strToJOb(JSC.jArrToString(ja, 0));
                     JSONObject joLoc = JSC.strToJOb(JSC.getJString(jo, "location"));
                     JSONObject joImg = JSC.strToJOb(JSC.getJString(jo, "images"));
-                    joImg = JSC.strToJOb(JSC.getJString(joImg, "low_resolution"));
+                    joImg = JSC.strToJOb(JSC.getJString(joImg, "thumbnail"));
                     JSONObject joUser = JSC.strToJOb(JSC.getJString(jo, "user"));
                     JSONObject joCap = JSC.strToJOb(JSC.getJString(jo, "caption"));
 
@@ -166,12 +169,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     } else {
                         caption = "";
                     }
+                    map.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+                        @Override
+                        public boolean onMarkerClick(Marker marker) {
+                            JSONObject jo = hashMap.get(marker);
+                            Intent i = new Intent(MainActivity.this, ImageViewActivity.class);
+                            i.putExtra("IMAGE_DATA", jo.toString());
+                            startActivity(i);
+                            return false;
+                        }
+                    });
                     Marker marker = map.addMarker(new MarkerOptions()
                             .title(title)
                             .icon((BitmapDescriptorFactory
                                     .defaultMarker(BitmapDescriptorFactory.HUE_VIOLET)))
                             .snippet(caption)
                             .position(u));
+                    hashMap.put(marker, jo);
                     getBitmap(JSC.getJString(joImg, "url"), marker);
                 } else {
                     Log.e("ARRAY", jo.toString());
@@ -197,22 +211,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public void onSuccess(int statusCode, Header[] headers, File response) {
                 // Do something with the file `response`
                 Bitmap bitmap = BitmapFactory.decodeFile(file.getPath());
-                marker.setIcon(BitmapDescriptorFactory.fromBitmap(addWhiteBorder(bitmap)));
+                marker.setIcon(BitmapDescriptorFactory.fromBitmap(Constants.addWhiteBorder(bitmap)));
             }
 
             public void onFailure(int statusCode, Header[] headers, Throwable throwable, File file) {
                 Log.e("image", "err");
             }
         });
-    }
-
-    private Bitmap addWhiteBorder(Bitmap bmp) {
-        int borderSize = 5;
-        Bitmap bmpWithBorder = Bitmap.createBitmap(bmp.getWidth() + borderSize * 2, bmp.getHeight() + borderSize * 2, bmp.getConfig());
-        Canvas canvas = new Canvas(bmpWithBorder);
-        canvas.drawColor(Color.WHITE);
-        canvas.drawBitmap(bmp, borderSize, borderSize, null);
-        return bmpWithBorder;
     }
 
 

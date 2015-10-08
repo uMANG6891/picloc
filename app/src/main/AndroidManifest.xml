@@ -32,6 +32,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".LoginActivity" />
+        <activity android:name=".ImageViewActivity" />
 
         <meta-data
             android:name="com.google.android.gms.version"
