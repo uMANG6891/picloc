@@ -11,9 +11,13 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.FileAsyncHttpResponseHandler;
+import com.umang.picloc.utility.Constants;
 import com.umang.picloc.utility.JSC;
+import com.umang.picloc.utility.MyCache;
 
 import org.json.JSONObject;
 
@@ -26,6 +30,7 @@ import cz.msebera.android.httpclient.Header;
  */
 public class ImageViewActivity extends AppCompatActivity {
 
+    public static final String EXTRA_IMAGE_DATA = "extra_image_data";
     String imageData;
     ImageView iv;
     ProgressBar pb;
@@ -40,7 +45,7 @@ public class ImageViewActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
-            imageData = extras.getString("IMAGE_DATA");
+            imageData = extras.getString(EXTRA_IMAGE_DATA);
             iv = (ImageView) findViewById(R.id.imageView);
             pb = (ProgressBar) findViewById(R.id.ivProgressBar);
         } else {
@@ -63,18 +68,11 @@ public class ImageViewActivity extends AppCompatActivity {
         }
 
         //get image
-        AsyncHttpClient client = new AsyncHttpClient();
-        client.get(JSC.getJString(joImg, "url"), new FileAsyncHttpResponseHandler(getBaseContext()) {
+        MyCache.with(this).loadImage(JSC.getJString(joImg, "url"), new MyCache.LoadImage() {
             @Override
-            public void onSuccess(int statusCode, Header[] headers, File response) {
-                // Do something with the file `response`
-                Bitmap bitmap = BitmapFactory.decodeFile(file.getPath());
-                iv.setImageBitmap(bitmap);
+            public void onLoad(Bitmap resource) {
+                iv.setImageBitmap(resource);
                 pb.setVisibility(View.GONE);
-            }
-
-            public void onFailure(int statusCode, Header[] headers, Throwable throwable, File file) {
-                Log.e("image", "err");
             }
         });
     }

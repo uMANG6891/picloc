@@ -1,17 +1,20 @@
 package com.umang.picloc;
 
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.location.Location;
+import android.location.LocationManager;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -22,17 +25,19 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
-import com.loopj.android.http.FileAsyncHttpResponseHandler;
 import com.umang.picloc.instagram.Instagram;
 import com.umang.picloc.instagram.InstagramSession;
 import com.umang.picloc.instagram.InstagramUser;
+import com.umang.picloc.utility.Constants;
 import com.umang.picloc.utility.JSC;
+import com.umang.picloc.utility.MyCache;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import cz.msebera.android.httpclient.Header;
 
@@ -45,11 +50,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     double lastLong = -1000;
     ProgressBar pbLoading;
 
+    LinearLayout llImagesMain;
+    HorizontalImageAdapter adapter;
+
     private InstagramSession mInstagramSession;
     private Instagram mInstagram;
     private InstagramUser instagramUser;
 
-    MarkerOptions tempMarker;
+    private List<JSONObject> imageData;
     JSONArray jaAll;
     private HashMap<Marker, JSONObject> hashMap = new HashMap<>();
 
@@ -72,74 +80,98 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     public void initialize() {
         pbLoading = (ProgressBar) findViewById(R.id.showLoading);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        toolbar.setTitle(getString(R.string.app_name));
+        llImagesMain = (LinearLayout) findViewById(R.id.main_ll_image_main);
+        imageData = new ArrayList<>();
+        adapter = new HorizontalImageAdapter(this, imageData, llImagesMain);
+
         map = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map)).getMap();
-        map.setMyLocationEnabled(true);
-        map.setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
+    }
 
-            @Override
-            public void onMyLocationChange(Location loc) {
-                // TODO Auto-generated method stub
-                map.setMyLocationEnabled(false);
-                if (loc != null && !gotLocation) {
-                    gotLocation = true;
-                    lastLat = loc.getLatitude();
-                    lastLong = loc.getLongitude();
-                    AsyncHttpClient client = new AsyncHttpClient();
-                    client.get("https://api.instagram.com/v1/locations/search?lat=" + lastLat + "&lng=" + lastLong
-                            + "&DISTANCE=500&access_token=" + instagramUser.accessToken, new AsyncHttpResponseHandler() {
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (isLocationEnabledOnPhone()) {
+            map.setMyLocationEnabled(true);
 
-                        @Override
-                        public void onStart() {
-                            // called before request is started
-                        }
+            map.setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
+                @Override
+                public void onMyLocationChange(Location loc) {
+                    // TODO Auto-generated method stub
+                    map.setMyLocationEnabled(false);
+                    if (loc != null && !gotLocation) {
+                        gotLocation = true;
+                        lastLat = loc.getLatitude();
+                        lastLong = loc.getLongitude();
+                        AsyncHttpClient client = new AsyncHttpClient();
+                        client.get(Constants.getInstagramNearByImagesUrl(lastLat, lastLong, instagramUser.accessToken), new AsyncHttpResponseHandler() {
 
-                        @Override
-                        public void onSuccess(int statusCode, Header[] headers, byte[] response) {
-                            // called when response HTTP status is "200 OK"
-                            LatLng u;
-                            JSONObject jo = JSC.strToJOb(new String(response));
-                            jaAll = JSC.strToJAr(JSC.getJString(jo, "data"));
+                            @Override
+                            public void onSuccess(int statusCode, Header[] headers, byte[] response) {
+                                // called when response HTTP status is "200 OK"
+                                LatLng u;
+                                JSONObject jo = JSC.strToJOb(new String(response));
+                                jaAll = JSC.strToJAr(JSC.getJString(jo, "data"));
 
-                            for (int i = 0; i < jaAll.length(); i++) {
-                                jo = JSC.strToJOb(JSC.jArrToString(jaAll, i));
-                                getLocationImage(jo, i);
-                                u = new LatLng(Double.parseDouble(JSC.getJString(jo, "latitude")),
-                                        Double.parseDouble(JSC.getJString(jo, "longitude")));
-                                if (i == 0) {
-                                    map.moveCamera(CameraUpdateFactory.newLatLngZoom(u, 17));
+                                for (int i = 0; i < jaAll.length(); i++) {
+                                    jo = JSC.strToJOb(JSC.jArrToString(jaAll, i));
+                                    getLocationImage(jo, i);
+                                    u = new LatLng(Double.parseDouble(JSC.getJString(jo, "latitude")),
+                                            Double.parseDouble(JSC.getJString(jo, "longitude")));
+                                    if (i == 0) {
+                                        map.moveCamera(CameraUpdateFactory.newLatLngZoom(u, 17));
+                                    }
                                 }
                             }
-                        }
 
-                        @Override
-                        public void onFailure(int statusCode, Header[] headers, byte[] errorResponse, Throwable e) {
-                            // called when response HTTP status is "4XX" (eg. 401, 403, 404)
-                        }
+                            @Override
+                            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
 
-                        @Override
-                        public void onRetry(int retryNo) {
-                            // called when request is retried
-                        }
-                    });
+                            }
+                        });
+                    }
+
                 }
 
-            }
+            });
+        } else {
+            buildAlertMessageNoGps();
+        }
+    }
 
-        });
+    private void buildAlertMessageNoGps() {
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(getString(R.string.message_location_disabled_title))
+                .setMessage(getString(R.string.message_location_disabled_message))
+                .setPositiveButton(getString(R.string.yes), new DialogInterface.OnClickListener() {
+                    public void onClick(final DialogInterface dialog, final int id) {
+                        startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+                    }
+                })
+                .setNegativeButton(getString(R.string.no), new DialogInterface.OnClickListener() {
+                    public void onClick(final DialogInterface dialog, final int id) {
+                        pbLoading.setVisibility(View.GONE);
+                        Toast.makeText(MainActivity.this, getString(R.string.no_location_available), Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setOnCancelListener(new DialogInterface.OnCancelListener() {
+                    @Override
+                    public void onCancel(DialogInterface dialog) {
+                        pbLoading.setVisibility(View.GONE);
+                        Toast.makeText(MainActivity.this, getString(R.string.no_location_available), Toast.LENGTH_SHORT).show();
+                    }
+                });
+        final AlertDialog alert = builder.create();
+        alert.show();
+    }
+
+    public boolean isLocationEnabledOnPhone() {
+        LocationManager manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        return manager.isProviderEnabled(LocationManager.GPS_PROVIDER);
     }
 
     private void getLocationImage(JSONObject jo, final int position) {
         AsyncHttpClient client = new AsyncHttpClient();
-        client.get("https://api.instagram.com/v1/locations/" + JSC.getJString(jo, "id") +
-                "/media/recent?access_token=" + instagramUser.accessToken, new AsyncHttpResponseHandler() {
-
-            @Override
-            public void onStart() {
-                // called before request is started
-            }
-
+        client.get(Constants.getInstagramImageInfoUrl(JSC.getJString(jo, "id"), instagramUser.accessToken), new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] response) {
                 // called when response HTTP status is "200 OK"
@@ -150,9 +182,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 JSONArray ja = JSC.strToJAr(JSC.getJString(jo, "data"));
                 if (ja.length() != 0) {
                     jo = JSC.strToJOb(JSC.jArrToString(ja, 0));
-                    JSONObject joLoc = JSC.strToJOb(JSC.getJString(jo, "location"));
-                    JSONObject joImg = JSC.strToJOb(JSC.getJString(jo, "images"));
-                    joImg = JSC.strToJOb(JSC.getJString(joImg, "thumbnail"));
+                    JSONObject joLoc = JSC.strToJOb(JSC.getJString(jo, "location")),
+                            joImg = JSC.strToJOb(JSC.getJString(jo, "images"));
+                    JSONObject joImgLowRes = JSC.strToJOb(JSC.getJString(joImg, "low_resolution"));
+                    JSONObject joImgLowThumb = JSC.strToJOb(JSC.getJString(joImg, "thumbnail"));
+
                     JSONObject joUser = JSC.strToJOb(JSC.getJString(jo, "user"));
                     JSONObject joCap = JSC.strToJOb(JSC.getJString(jo, "caption"));
 
@@ -174,7 +208,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         public boolean onMarkerClick(Marker marker) {
                             JSONObject jo = hashMap.get(marker);
                             Intent i = new Intent(MainActivity.this, ImageViewActivity.class);
-                            i.putExtra("IMAGE_DATA", jo.toString());
+                            i.putExtra(ImageViewActivity.EXTRA_IMAGE_DATA, jo.toString());
                             startActivity(i);
                             return false;
                         }
@@ -185,10 +219,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                     .defaultMarker(BitmapDescriptorFactory.HUE_VIOLET)))
                             .snippet(caption)
                             .position(u));
+                    // for staring image view activity on marker click
                     hashMap.put(marker, jo);
-                    getBitmap(JSC.getJString(joImg, "url"), marker);
+                    // for staring image view activity on image click
+                    imageData.add(jo);
+                    adapter.swapData(imageData);
+
+                    getBitmap(JSC.getJString(joImgLowThumb, "url"), marker);
                 } else {
-                    Log.e("ARRAY", jo.toString());
+//                    Log.e("ARRAY", jo.toString());
                 }
             }
 
@@ -196,26 +235,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public void onFailure(int statusCode, Header[] headers, byte[] errorResponse, Throwable e) {
                 // called when response HTTP status is "4XX" (eg. 401, 403, 404)
             }
-
-            @Override
-            public void onRetry(int retryNo) {
-                // called when request is retried
-            }
         });
     }
 
     public void getBitmap(String url, final Marker marker) {
-        AsyncHttpClient client = new AsyncHttpClient();
-        client.get(url, new FileAsyncHttpResponseHandler(getBaseContext()) {
+        MyCache.with(this).loadImage(url, new MyCache.LoadImage() {
             @Override
-            public void onSuccess(int statusCode, Header[] headers, File response) {
-                // Do something with the file `response`
-                Bitmap bitmap = BitmapFactory.decodeFile(file.getPath());
-                marker.setIcon(BitmapDescriptorFactory.fromBitmap(Constants.addWhiteBorder(bitmap)));
-            }
-
-            public void onFailure(int statusCode, Header[] headers, Throwable throwable, File file) {
-                Log.e("image", "err");
+            public void onLoad(Bitmap resource) {
+                marker.setIcon(BitmapDescriptorFactory.fromBitmap(Constants.addWhiteBorder(resource)));
             }
         });
     }
@@ -226,25 +253,4 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
 }

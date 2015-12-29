@@ -13,18 +13,29 @@
         android:id="@+id/map"
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:layout_above="@+id/main_hsc_image_scroll_main" />
 
-    <RelativeLayout
+
+    <HorizontalScrollView
+        android:id="@+id/main_hsc_image_scroll_main"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true">
 
-        <ProgressBar
-            android:id="@+id/showLoading"
-            style="?android:attr/progressBarStyle"
+        <LinearLayout
+            android:id="@+id/main_ll_image_main"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerInParent="true" />
-    </RelativeLayout>
+            android:layout_height="@dimen/main_thumb_dimen"
+            android:visibility="gone"
+            android:orientation="horizontal" />
+    </HorizontalScrollView>
+
+    <ProgressBar
+        android:id="@+id/showLoading"
+        style="?android:attr/progressBarStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true" />
 
 </RelativeLayout>
