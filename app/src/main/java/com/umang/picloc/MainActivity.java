@@ -16,6 +16,9 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.animation.GlideAnimation;
+import com.bumptech.glide.request.target.SimpleTarget;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -30,7 +33,6 @@ import com.umang.picloc.instagram.InstagramSession;
 import com.umang.picloc.instagram.InstagramUser;
 import com.umang.picloc.utility.Constants;
 import com.umang.picloc.utility.JSC;
-import com.umang.picloc.utility.MyCache;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -65,7 +67,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mInstagram = new Instagram(this, Constants.CLIENT_ID, Constants.CLIENT_SECRET, Constants.CALLBACK_URL);
+        mInstagram = new Instagram(this, getString(R.string.instagram_client_id), getString(R.string.instagram_client_secret), Constants.CALLBACK_URL);
         mInstagramSession = mInstagram.getSession();
         if (mInstagramSession.isActive()) {
             instagramUser = mInstagramSession.getUser();
@@ -184,7 +186,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     jo = JSC.strToJOb(JSC.jArrToString(ja, 0));
                     JSONObject joLoc = JSC.strToJOb(JSC.getJString(jo, "location")),
                             joImg = JSC.strToJOb(JSC.getJString(jo, "images"));
-                    JSONObject joImgLowRes = JSC.strToJOb(JSC.getJString(joImg, "low_resolution"));
                     JSONObject joImgLowThumb = JSC.strToJOb(JSC.getJString(joImg, "thumbnail"));
 
                     JSONObject joUser = JSC.strToJOb(JSC.getJString(jo, "user"));
@@ -239,12 +240,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     public void getBitmap(String url, final Marker marker) {
-        MyCache.with(this).loadImage(url, new MyCache.LoadImage() {
-            @Override
-            public void onLoad(Bitmap resource) {
-                marker.setIcon(BitmapDescriptorFactory.fromBitmap(Constants.addWhiteBorder(resource)));
-            }
-        });
+        Glide.with(getApplicationContext()).
+                load(url)
+                .asBitmap()
+                .fitCenter()
+                .into(new SimpleTarget<Bitmap>() {
+                    @Override
+                    public void onResourceReady(Bitmap bitmap, GlideAnimation<? super Bitmap> glideAnimation) {
+                        marker.setIcon(BitmapDescriptorFactory.fromBitmap(Constants.addWhiteBorder(bitmap)));
+                    }
+                });
     }
 
 

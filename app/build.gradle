@@ -10,6 +10,9 @@ android {
         targetSdkVersion 22
         versionCode 1
         versionName "0.0.1"
+        resValue 'string', 'instagram_client_id', '"INSTAGRAM_CLIENT_ID"'
+        resValue 'string', 'instagram_client_secret', '"INSTAGRAM_CLIENT_SECRET"'
+        resValue 'string', 'google_maps_api_key', '"GOOGLE_MAPS_SPI_KEY"'
     }
     buildTypes {
         release {

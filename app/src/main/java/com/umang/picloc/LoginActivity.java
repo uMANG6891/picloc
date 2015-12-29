@@ -35,7 +35,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     }
 
     public void initialize() {
-        mInstagram = new Instagram(this, Constants.CLIENT_ID, Constants.CLIENT_SECRET, Constants.CALLBACK_URL);
+        mInstagram = new Instagram(this, getString(R.string.instagram_client_id), getString(R.string.instagram_client_secret), Constants.CALLBACK_URL);
         mInstagramSession = mInstagram.getSession();
         if (mInstagramSession.isActive()) {
 

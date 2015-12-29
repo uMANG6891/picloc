@@ -31,14 +31,16 @@
             </intent-filter>
         </activity>
         <activity android:name=".LoginActivity" />
-        <activity android:name=".ImageViewActivity" />
+        <activity
+            android:name=".ImageViewActivity"
+            android:label="@string/photo" />
 
         <meta-data
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
         <meta-data
             android:name="com.google.android.maps.v2.API_KEY"
-            android:value="AIzaSyAY0Hv2AxoMvp9y4aFo8lUcH8bdAzuv56k" />
+            android:value="@string/google_maps_api_key" />
     </application>
 
 </manifest>

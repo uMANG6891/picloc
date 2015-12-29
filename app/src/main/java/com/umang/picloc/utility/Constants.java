@@ -9,15 +9,13 @@ import android.graphics.Color;
  */
 public class Constants {
 
-    public static String CLIENT_ID = "ea99cc971b114a3eb1de2a9b685f5615";
-    public static String CLIENT_SECRET = "a9d62c64798a455b87f763d3a552cd08";
-    public static String CALLBACK_URL = "http://umangpandya.com";
+    public static final String CALLBACK_URL = "http://umangpandya.com";
 
     public static final String INSTAGRAM_BASE_URL = "https://api.instagram.com/v1/";
+    public static final String BASE_INSTAGRAM_PROFILE = "http://instagram.com/_u/";
 
     public static String getInstagramNearByImagesUrl(double latitude, double longitude, String instagramToken) {
-        return INSTAGRAM_BASE_URL + "locations/search?lat=" + latitude + "&lng=" + longitude
-                + "&DISTANCE=500&access_token=" + instagramToken;
+        return INSTAGRAM_BASE_URL + "locations/search?lat=" + latitude + "&lng=" + longitude + "&DISTANCE=500&access_token=" + instagramToken;
     }
 
     public static String getInstagramImageInfoUrl(String imageId, String token) {

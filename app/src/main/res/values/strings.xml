@@ -7,4 +7,12 @@
     <string name="yes">Yes</string>
     <string name="no">No</string>
     <string name="no_location_available">No location info available</string>
+    <string name="no_image_data">No description for this image</string>
+    <string name="photo">PHOTO</string>
+    <string name="short_second">sec</string>
+    <string name="short_minute">min</string>
+    <string name="short_day">d</string>
+    <string name="short_hour">h</string>
+    <string name="short_week">w</string>
+    <string name="short_year">y</string>
 </resources>
