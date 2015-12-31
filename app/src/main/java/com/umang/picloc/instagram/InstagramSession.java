@@ -39,7 +39,7 @@ public class InstagramSession {
         editor.putString(USERID, user.id);
         editor.putString(USERNAME, user.username);
         editor.putString(FULLNAME, user.fullName);
-        editor.putString(PROFILPIC, user.profilPicture);
+        editor.putString(PROFILPIC, user.profilePicture);
 
         editor.commit();
     }
@@ -79,7 +79,7 @@ public class InstagramSession {
         user.id = mSharedPref.getString(USERID, "");
         user.username = mSharedPref.getString(USERNAME, "");
         user.fullName = mSharedPref.getString(FULLNAME, "");
-        user.profilPicture = mSharedPref.getString(PROFILPIC, "");
+        user.profilePicture = mSharedPref.getString(PROFILPIC, "");
         user.accessToken = mSharedPref.getString(ACCESS_TOKEN, "");
 
         return user;

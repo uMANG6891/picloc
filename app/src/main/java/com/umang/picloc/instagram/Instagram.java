@@ -155,7 +155,7 @@ public class Instagram {
                     user.id = jsonUser.getString("id");
                     user.username = jsonUser.getString("username");
                     user.fullName = jsonUser.getString("full_name");
-                    user.profilPicture = jsonUser.getString("profile_picture");
+                    user.profilePicture = jsonUser.getString("profile_picture");
                 }
             } catch (Exception e) {
                 e.printStackTrace();

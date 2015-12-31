@@ -59,6 +59,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     private Instagram.InstagramAuthListener mAuthListener = new Instagram.InstagramAuthListener() {
         @Override
         public void onSuccess(InstagramUser user) {
+            Toast.makeText(LoginActivity.this, getString(R.string.welcom_message, user.fullName), Toast.LENGTH_SHORT).show();
             startActivity(new Intent(LoginActivity.this, MainActivity.class));
             overridePendingTransition(0, 0);
             finish();

@@ -9,16 +9,24 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
+import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.animation.GlideAnimation;
+import com.bumptech.glide.request.target.BitmapImageViewTarget;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -47,7 +55,7 @@ import java.util.List;
 
 import cz.msebera.android.httpclient.Header;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity{
 
     boolean gotLocation = false;
     GoogleMap map;
@@ -58,6 +66,8 @@ public class MainActivity extends AppCompatActivity {
 
     LinearLayout llImagesMain;
     HorizontalImageAdapter adapter;
+    ImageView ivToolbarIcon;
+    TextView tvToolbarTitle;
 
     private InstagramSession mInstagramSession;
     private InstagramUser instagramUser;
@@ -92,8 +102,32 @@ public class MainActivity extends AppCompatActivity {
         llImagesMain = (LinearLayout) findViewById(R.id.main_ll_image_main);
         imageData = new ArrayList<>();
         adapter = new HorizontalImageAdapter(this, imageData, llImagesMain);
+        ivToolbarIcon = (ImageView) findViewById(R.id.toolbar_icon);
+        tvToolbarTitle = (TextView) findViewById(R.id.toolbar_title);
 
         map = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map)).getMap();
+
+        setSupportActionBar((Toolbar) findViewById(R.id.toolbar));
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            tvToolbarTitle.setText(instagramUser.fullName);
+            if (!instagramUser.profilePicture.isEmpty()) {
+                Glide.with(this)
+                        .load(instagramUser.profilePicture)
+                        .asBitmap()
+                        .centerCrop()
+                        .into(new BitmapImageViewTarget(ivToolbarIcon) {
+                            @Override
+                            protected void setResource(Bitmap resource) {
+                                RoundedBitmapDrawable circularBitmapDrawable =
+                                        RoundedBitmapDrawableFactory.create(getResources(), resource);
+                                circularBitmapDrawable.setCornerRadius(resource.getWidth());
+                                ivToolbarIcon.setImageDrawable(circularBitmapDrawable);
+                            }
+                        });
+            }
+        }
+
     }
 
     @Override
