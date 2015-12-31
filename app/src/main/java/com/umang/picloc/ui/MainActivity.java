@@ -1,4 +1,4 @@
-package com.umang.picloc;
+package com.umang.picloc.ui;
 
 import android.app.AlertDialog;
 import android.content.Context;
@@ -10,6 +10,8 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -27,6 +29,9 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
+import com.umang.picloc.HorizontalImageAdapter;
+import com.umang.picloc.ImageViewActivity;
+import com.umang.picloc.R;
 import com.umang.picloc.instagram.Instagram;
 import com.umang.picloc.instagram.InstagramSession;
 import com.umang.picloc.instagram.InstagramUser;
@@ -54,8 +59,6 @@ public class MainActivity extends AppCompatActivity {
     LinearLayout llImagesMain;
     HorizontalImageAdapter adapter;
 
-    private InstagramSession mInstagramSession;
-    private Instagram mInstagram;
     private InstagramUser instagramUser;
 
     private List<JSONObject> imageData;
@@ -63,13 +66,14 @@ public class MainActivity extends AppCompatActivity {
     private HashMap<Marker, JSONObject> hashMap = new HashMap<>();
 
     private boolean isActivityRunning = false;
+    private boolean isRefreshing = false;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mInstagram = new Instagram(this, getString(R.string.instagram_client_id), getString(R.string.instagram_client_secret), Constants.CALLBACK_URL);
-        mInstagramSession = mInstagram.getSession();
+        Instagram mInstagram = new Instagram(this, getString(R.string.instagram_client_id), getString(R.string.instagram_client_secret), Constants.CALLBACK_URL);
+        InstagramSession mInstagramSession = mInstagram.getSession();
         if (mInstagramSession.isActive()) {
             instagramUser = mInstagramSession.getUser();
             setContentView(R.layout.activity_main);
@@ -94,6 +98,12 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         isActivityRunning = true;
+        refreshMapContent();
+    }
+
+    private void refreshMapContent() {
+        isRefreshing = true;
+        pbLoading.setVisibility(View.VISIBLE);
         if (isLocationEnabledOnPhone()) {
             map.setMyLocationEnabled(true);
 
@@ -116,6 +126,8 @@ public class MainActivity extends AppCompatActivity {
                                     LatLng u;
                                     JSONObject jo = JSC.strToJOb(new String(response));
                                     jaAll = JSC.strToJAr(JSC.getJString(jo, "data"));
+                                    imageData = new ArrayList<>();
+                                    hashMap = new HashMap<>();
 
                                     for (int i = 0; i < jaAll.length(); i++) {
                                         jo = JSC.strToJOb(JSC.jArrToString(jaAll, i));
@@ -126,6 +138,7 @@ public class MainActivity extends AppCompatActivity {
                                             map.moveCamera(CameraUpdateFactory.newLatLngZoom(u, 17));
                                         }
                                     }
+                                    isRefreshing = false;
                                 }
                             }
 
@@ -262,6 +275,30 @@ public class MainActivity extends AppCompatActivity {
                             marker.setIcon(BitmapDescriptorFactory.fromBitmap(Constants.addWhiteBorder(bitmap)));
                         }
                     });
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        super.onCreateOptionsMenu(menu);
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        super.onOptionsItemSelected(item);
+        switch (item.getItemId()) {
+            case R.id.menu_refresh:
+                if (!isRefreshing) {
+                    gotLocation = false;
+                    refreshMapContent();
+                }else{
+                    Toast.makeText(MainActivity.this, "Already refreshing...", Toast.LENGTH_SHORT).show();
+                }
+                return true;
+            default:
+                return false;
         }
     }
 }

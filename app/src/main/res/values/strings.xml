@@ -18,4 +18,5 @@
     <string name="login_button_text">Login with Instagram</string>
     <string name="login_subhead">login to access all the amazing Picloc features</string>
     <string name="login_title">Login with Instagram</string>
+    <string name="menu_refresh">Refresh</string>
 </resources>
