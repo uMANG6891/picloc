@@ -8,7 +8,6 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Typeface;
-import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -28,6 +27,8 @@ import android.widget.TextView;
  *
  * @author Lorensius W. L. T <lorenz@londatiga.net>
  */
+
+
 @SuppressLint({"NewApi", "SetJavaScriptEnabled"})
 public class InstagramDialog extends Dialog {
     private ProgressDialog mSpinner;
@@ -106,17 +107,13 @@ public class InstagramDialog extends Dialog {
     private void setUpTitle() {
         requestWindowFeature(Window.FEATURE_NO_TITLE);
 
-        Drawable icon = getContext().getResources().getDrawable(android.R.drawable.ic_input_add);
-
         mTitle = new TextView(getContext());
-
-        mTitle.setText("Instagram");
         mTitle.setTextColor(Color.WHITE);
         mTitle.setTypeface(Typeface.DEFAULT_BOLD);
         mTitle.setBackgroundColor(0xFF163753);
         mTitle.setPadding(MARGIN + PADDING, MARGIN, MARGIN, MARGIN);
         mTitle.setCompoundDrawablePadding(MARGIN + PADDING);
-        mTitle.setCompoundDrawablesWithIntrinsicBounds(icon, null, null, null);
+        mTitle.setCompoundDrawablesWithIntrinsicBounds(null, null, null, null);
 
         mContent.addView(mTitle);
     }
@@ -200,13 +197,6 @@ public class InstagramDialog extends Dialog {
         @Override
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
-
-            String title = mWebView.getTitle();
-
-            if (title != null && title.length() > 0) {
-                mTitle.setText(title);
-            }
-
             mSpinner.dismiss();
         }
     }
