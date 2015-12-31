@@ -19,4 +19,9 @@
     <string name="login_subhead">login to access all the amazing Picloc features</string>
     <string name="login_title">Login with Instagram</string>
     <string name="menu_refresh">Refresh</string>
+    <string name="menu_logout">Logout from Instagram</string>
+    <string name="logout_title">Logout from Instagram?</string>
+    <string name="logout_message">Are you sure, you want to log out from this amazing app?</string>
+    <string name="logout">Logout</string>
+    <string name="dismiss">Dismiss</string>
 </resources>

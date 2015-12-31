@@ -59,6 +59,7 @@ public class MainActivity extends AppCompatActivity {
     LinearLayout llImagesMain;
     HorizontalImageAdapter adapter;
 
+    private InstagramSession mInstagramSession;
     private InstagramUser instagramUser;
 
     private List<JSONObject> imageData;
@@ -73,15 +74,16 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Instagram mInstagram = new Instagram(this, getString(R.string.instagram_client_id), getString(R.string.instagram_client_secret), Constants.CALLBACK_URL);
-        InstagramSession mInstagramSession = mInstagram.getSession();
+        mInstagramSession = mInstagram.getSession();
         if (mInstagramSession.isActive()) {
             instagramUser = mInstagramSession.getUser();
             setContentView(R.layout.activity_main);
             initialize();
         } else {
             Intent i = new Intent(this, LoginActivity.class);
-            finish();
             startActivity(i);
+            overridePendingTransition(0, 0);
+            finish();
         }
     }
 
@@ -293,9 +295,30 @@ public class MainActivity extends AppCompatActivity {
                 if (!isRefreshing) {
                     gotLocation = false;
                     refreshMapContent();
-                }else{
+                } else {
                     Toast.makeText(MainActivity.this, "Already refreshing...", Toast.LENGTH_SHORT).show();
                 }
+                return true;
+            case R.id.menu_logout:
+                AlertDialog.Builder dialog = new AlertDialog.Builder(MainActivity.this);
+                dialog.setTitle(R.string.logout_title)
+                        .setMessage(R.string.logout_message)
+                        .setPositiveButton(R.string.logout, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                                mInstagramSession.reset();
+                                startActivity(new Intent(MainActivity.this, LoginActivity.class));
+                                finish();
+                                overridePendingTransition(0, 0);
+                            }
+                        })
+                        .setNegativeButton(R.string.dismiss, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                            }
+                        }).show();
                 return true;
             default:
                 return false;
