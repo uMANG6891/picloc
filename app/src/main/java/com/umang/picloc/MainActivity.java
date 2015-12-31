@@ -10,7 +10,6 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -43,7 +42,7 @@ import java.util.List;
 
 import cz.msebera.android.httpclient.Header;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+public class MainActivity extends AppCompatActivity {
 
     boolean gotLocation = false;
     GoogleMap map;
@@ -62,6 +61,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private List<JSONObject> imageData;
     JSONArray jaAll;
     private HashMap<Marker, JSONObject> hashMap = new HashMap<>();
+
+    private boolean isActivityRunning = false;
 
 
     @Override
@@ -92,6 +93,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onResume() {
         super.onResume();
+        isActivityRunning = true;
         if (isLocationEnabledOnPhone()) {
             map.setMyLocationEnabled(true);
 
@@ -110,17 +112,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             @Override
                             public void onSuccess(int statusCode, Header[] headers, byte[] response) {
                                 // called when response HTTP status is "200 OK"
-                                LatLng u;
-                                JSONObject jo = JSC.strToJOb(new String(response));
-                                jaAll = JSC.strToJAr(JSC.getJString(jo, "data"));
+                                if (isActivityRunning) {
+                                    LatLng u;
+                                    JSONObject jo = JSC.strToJOb(new String(response));
+                                    jaAll = JSC.strToJAr(JSC.getJString(jo, "data"));
 
-                                for (int i = 0; i < jaAll.length(); i++) {
-                                    jo = JSC.strToJOb(JSC.jArrToString(jaAll, i));
-                                    getLocationImage(jo, i);
-                                    u = new LatLng(Double.parseDouble(JSC.getJString(jo, "latitude")),
-                                            Double.parseDouble(JSC.getJString(jo, "longitude")));
-                                    if (i == 0) {
-                                        map.moveCamera(CameraUpdateFactory.newLatLngZoom(u, 17));
+                                    for (int i = 0; i < jaAll.length(); i++) {
+                                        jo = JSC.strToJOb(JSC.jArrToString(jaAll, i));
+                                        getLocationImage(jo, i);
+                                        u = new LatLng(Double.parseDouble(JSC.getJString(jo, "latitude")),
+                                                Double.parseDouble(JSC.getJString(jo, "longitude")));
+                                        if (i == 0) {
+                                            map.moveCamera(CameraUpdateFactory.newLatLngZoom(u, 17));
+                                        }
                                     }
                                 }
                             }
@@ -138,6 +142,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         } else {
             buildAlertMessageNoGps();
         }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        isActivityRunning = false;
     }
 
     private void buildAlertMessageNoGps() {
@@ -177,58 +187,59 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] response) {
                 // called when response HTTP status is "200 OK"
-                pbLoading.setVisibility(View.GONE);
-                LatLng u;
-                String title, caption;
-                JSONObject jo = JSC.strToJOb(new String(response));
-                JSONArray ja = JSC.strToJAr(JSC.getJString(jo, "data"));
-                if (ja.length() != 0) {
-                    jo = JSC.strToJOb(JSC.jArrToString(ja, 0));
-                    JSONObject joLoc = JSC.strToJOb(JSC.getJString(jo, "location")),
-                            joImg = JSC.strToJOb(JSC.getJString(jo, "images"));
-                    JSONObject joImgLowThumb = JSC.strToJOb(JSC.getJString(joImg, "thumbnail"));
+                if (isActivityRunning) {
+                    pbLoading.setVisibility(View.GONE);
+                    LatLng u;
+                    String title, caption;
+                    JSONObject jo = JSC.strToJOb(new String(response));
+                    JSONArray ja = JSC.strToJAr(JSC.getJString(jo, "data"));
+                    if (ja.length() != 0) {
+                        jo = JSC.strToJOb(JSC.jArrToString(ja, 0));
+                        JSONObject joLoc = JSC.strToJOb(JSC.getJString(jo, "location")),
+                                joImg = JSC.strToJOb(JSC.getJString(jo, "images"));
+                        JSONObject joImgLowThumb = JSC.strToJOb(JSC.getJString(joImg, "thumbnail"));
 
-                    JSONObject joUser = JSC.strToJOb(JSC.getJString(jo, "user"));
-                    JSONObject joCap = JSC.strToJOb(JSC.getJString(jo, "caption"));
+                        JSONObject joUser = JSC.strToJOb(JSC.getJString(jo, "user"));
+                        JSONObject joCap = JSC.strToJOb(JSC.getJString(jo, "caption"));
 
-                    u = new LatLng(Double.parseDouble(JSC.getJString(joLoc, "latitude")),
-                            Double.parseDouble(JSC.getJString(joLoc, "longitude")));
-                    if (joUser != null) {
-                        title = JSC.getJString(joUser, "full_name") + " (" + JSC.getJString(joUser, "username") + ")";
-                    } else {
-                        title = "UNKNOWN";
-                        Log.e("JO", jo.toString() + ":");
-                    }
-                    if (joCap != null) {
-                        caption = JSC.getJString(joCap, "text");
-                    } else {
-                        caption = "";
-                    }
-                    map.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
-                        @Override
-                        public boolean onMarkerClick(Marker marker) {
-                            JSONObject jo = hashMap.get(marker);
-                            Intent i = new Intent(MainActivity.this, ImageViewActivity.class);
-                            i.putExtra(ImageViewActivity.EXTRA_IMAGE_DATA, jo.toString());
-                            startActivity(i);
-                            return false;
+                        u = new LatLng(Double.parseDouble(JSC.getJString(joLoc, "latitude")),
+                                Double.parseDouble(JSC.getJString(joLoc, "longitude")));
+                        if (joUser != null) {
+                            title = JSC.getJString(joUser, "full_name") + " (" + JSC.getJString(joUser, "username") + ")";
+                        } else {
+                            title = "UNKNOWN";
                         }
-                    });
-                    Marker marker = map.addMarker(new MarkerOptions()
-                            .title(title)
-                            .icon((BitmapDescriptorFactory
-                                    .defaultMarker(BitmapDescriptorFactory.HUE_VIOLET)))
-                            .snippet(caption)
-                            .position(u));
-                    // for staring image view activity on marker click
-                    hashMap.put(marker, jo);
-                    // for staring image view activity on image click
-                    imageData.add(jo);
-                    adapter.swapData(imageData);
+                        if (joCap != null) {
+                            caption = JSC.getJString(joCap, "text");
+                        } else {
+                            caption = "";
+                        }
+                        map.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+                            @Override
+                            public boolean onMarkerClick(Marker marker) {
+                                JSONObject jo = hashMap.get(marker);
+                                Intent i = new Intent(MainActivity.this, ImageViewActivity.class);
+                                i.putExtra(ImageViewActivity.EXTRA_IMAGE_DATA, jo.toString());
+                                startActivity(i);
+                                return false;
+                            }
+                        });
+                        Marker marker = map.addMarker(new MarkerOptions()
+                                .title(title)
+                                .icon((BitmapDescriptorFactory
+                                        .defaultMarker(BitmapDescriptorFactory.HUE_VIOLET)))
+                                .snippet(caption)
+                                .position(u));
+                        // for staring image view activity on marker click
+                        hashMap.put(marker, jo);
+                        // for staring image view activity on image click
+                        imageData.add(jo);
+                        adapter.swapData(imageData);
 
-                    getBitmap(JSC.getJString(joImgLowThumb, "url"), marker);
-                } else {
+                        getBitmap(JSC.getJString(joImgLowThumb, "url"), marker);
+                    } else {
 //                    Log.e("ARRAY", jo.toString());
+                    }
                 }
             }
 
@@ -240,22 +251,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     public void getBitmap(String url, final Marker marker) {
-        Glide.with(getApplicationContext()).
-                load(url)
-                .asBitmap()
-                .fitCenter()
-                .into(new SimpleTarget<Bitmap>() {
-                    @Override
-                    public void onResourceReady(Bitmap bitmap, GlideAnimation<? super Bitmap> glideAnimation) {
-                        marker.setIcon(BitmapDescriptorFactory.fromBitmap(Constants.addWhiteBorder(bitmap)));
-                    }
-                });
+        if (isActivityRunning) {
+            Glide.with(getApplicationContext()).
+                    load(url)
+                    .asBitmap()
+                    .fitCenter()
+                    .into(new SimpleTarget<Bitmap>() {
+                        @Override
+                        public void onResourceReady(Bitmap bitmap, GlideAnimation<? super Bitmap> glideAnimation) {
+                            marker.setIcon(BitmapDescriptorFactory.fromBitmap(Constants.addWhiteBorder(bitmap)));
+                        }
+                    });
+        }
     }
-
-
-    @Override
-    public void onClick(View v) {
-
-    }
-
 }

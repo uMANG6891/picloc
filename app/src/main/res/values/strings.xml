@@ -15,4 +15,7 @@
     <string name="short_hour">h</string>
     <string name="short_week">w</string>
     <string name="short_year">y</string>
+    <string name="login_button_text">Login with Instagram</string>
+    <string name="login_subhead">login to access all the amazing Picloc features</string>
+    <string name="login_title">Login with Instagram</string>
 </resources>
